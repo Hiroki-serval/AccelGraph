@@ -21,7 +21,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private GraphView xView, yView, zView;
 
     private SensorManager sensorMgr;
-    private Sensor accelerometer;
+    private Sensor magnetic_field;
 
     private final static long GRAPH_REFRESH_WAIT_MS = 20;
 
@@ -33,7 +33,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private int accuracy;
     private long prevts;
 
-    private final static float alpha = 0.75F;
+    private final static float alpha = 0.075F;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +48,8 @@ public class MainActivity extends Activity implements SensorEventListener {
         zView = (GraphView) findViewById(R.id.z_view);
 
         sensorMgr = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accelerometer = sensorMgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        if (accelerometer == null) {
+        magnetic_field = sensorMgr.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        if (magnetic_field == null) {
             Toast.makeText(this, getString(R.string.toast_no_accel_error),
                     Toast.LENGTH_SHORT).show();
             finish();
@@ -63,7 +63,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     protected void onResume() {
         super.onResume();
         Log.i(TAG, "onResume");
-        sensorMgr.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorMgr.registerListener(this, magnetic_field, SensorManager.SENSOR_DELAY_NORMAL);
         th = new GraphRefreshThread();
         th.start();
     }
@@ -78,11 +78,13 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        vx = alpha * vx + (1 - alpha) * event.values[0];
-        vy = alpha * vy + (1 - alpha) * event.values[1];
-        vz = alpha * vz + (1 - alpha) * event.values[2];
+        vx = (alpha * vx + (1 - alpha) * event.values[0]) / 10;
+        vy = (alpha * vx + (1 - alpha) * event.values[1])/ 10;
+        vz = (alpha * vx + (1 - alpha) * event.values[2]) / 10;
         rate = ((float) (event.timestamp - prevts)) / (1000 * 1000);
         prevts = event.timestamp;
+        final float[] ev = event.values;
+        Log.i(TAG, "ax=" + ev[0] + ", ay=" + ev[1] + ", az=" + ev[2]);
     }
 
     @Override
